@@ -29,13 +29,12 @@ typedef struct {
 } piece_table_t;
 
 // Main functions
-// piece_t* create_piece(const char* source, int index, int length, int range);
+piece_t* create_piece(const char* source, int index, int length, int range);
 piece_table_t* create_pt(char* original_buffer);
 void insert_piece(piece_table_t* pt, char* data, int index);
 
 // Utilities
-// void piece_dump(piece_table_t* pt, piece_t* current);
-// void range_handler(piece_table_t* pt);
+void piece_dump(piece_table_t* pt, piece_t* current);
 
-// El codigo le falta poder a;adir cosas al finan, muchos tests, y documentacion
+
 

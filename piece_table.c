@@ -33,6 +33,7 @@ piece_t* create_piece(const char* source, int index, int length, int range) {
 
 piece_table_t* create_pt(char* original_buffer) {
     piece_table_t* pt = malloc(sizeof(piece_table_t));
+    strcat(original_buffer, "\0");
 
     pt->original_buffer = strdup(original_buffer);
     pt->append_buffer = new_string(0);
@@ -83,12 +84,17 @@ void insert_piece(piece_table_t* pt, char* data, int index) {
             else pt->sequence->tail = last_half;
             last_half->prev = new_piece;
 
+            // if last_half doesnt exist just not insert it
+            if (last_half->data->length == 0) {
+                last_half = current->next;
+            }
+
             // if first_half doesnt exists does not insert it
             if (current->data->length == 0) {
                 if (current->prev) current->prev->next = new_piece;
                 else pt->sequence->head = new_piece;
             } else current->next = new_piece;
-            
+
             new_piece->next = last_half;
             new_piece->prev = current;
 
@@ -97,8 +103,9 @@ void insert_piece(piece_table_t* pt, char* data, int index) {
             return;
         }
 
-        // If index isn't in a piece
-        if (current == pt->sequence->tail && cur_pos + current->data->length - 1 < index) {
+        // If index isn't in a piece and its in the end of the sequence
+        if (current->next == NULL) {
+            // creating the new piece
             int np_range = ++pt->sequence->range_counter;
             piece_t* new_piece = create_piece(
                 "append", 
@@ -107,9 +114,10 @@ void insert_piece(piece_table_t* pt, char* data, int index) {
                 np_range
             );
 
+            // inserting the new piece at the end
+            new_piece->next = NULL;
             new_piece->prev = current;
             current->next = new_piece;
-            new_piece->next = NULL;
             pt->sequence->tail = new_piece;
 
             return;
@@ -120,11 +128,12 @@ void insert_piece(piece_table_t* pt, char* data, int index) {
     }
 }
 
-int main() {
-    piece_table_t* pt = create_pt("A");
-    insert_piece(pt, "B", 1);
-    insert_piece(pt, "C", 2);
-    insert_piece(pt, "D", 3);
-    piece_dump(pt, pt->sequence->head);
-    return 0;
-}
+// FOR TESTING:
+// int main() {
+//     piece_table_t* pt = create_pt("esto");
+//     insert_piece(pt, "Hola ", 0);
+//     insert_piece(pt, " deberia sentido", 9);
+//     insert_piece(pt, " tener totalmente", 17);
+//     piece_dump(pt, pt->sequence->head);
+//     return 0;
+// }
