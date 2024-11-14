@@ -31,10 +31,12 @@ typedef struct {
 // Main functions
 piece_t* create_piece(const char* source, int index, int length, int range);
 piece_table_t* create_pt(char* original_buffer);
-void insert_piece(piece_table_t* pt, char* data, int index);
+void insert_text(piece_table_t* pt, char* data, int index);
+void delete_text(piece_table_t* pt, int index, int length);
 
 // Utilities
 void piece_dump(piece_table_t* pt, piece_t* current);
+char* pt_parser(piece_table_t* pt);
 
 
 

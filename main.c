@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include "string.h"
+#include "piece_table.h"
+#include "tui.h"
 
 int file_handler(int argc, char* argv[]) {
     if (argc == 1) {
@@ -21,13 +22,27 @@ char* file_to_string(FILE* file) {
     return original_buffer->content;
 }
 
+
+void save_file(char* filename, char* content) {
+    FILE* file = fopen(filename, "w");
+
+    fprintf(file, "%s", content);
+}
+
 int main(int argc, char* argv[]) {
     if (file_handler(argc, argv) == 1) return 1;
 
     FILE* file = fopen(argv[1], "r");
     char* original_buffer = file_to_string(file);
+    fclose(file);
 
-    printf("%s", original_buffer);
+    piece_table_t* pt = create_pt(original_buffer);
+    insert_text(pt, "// Esto deberia estar al principio del nuevo archivo\n", 0);
+    char* pt_content = pt_parser(pt);
+
+    save_file(argv[1], pt_content);
+
+    render(pt_content);
 
     return 0;
 }

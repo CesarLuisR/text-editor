@@ -16,6 +16,27 @@ void piece_dump(piece_table_t* pt, piece_t* current) {
     }
 }
 
+char* pt_parser(piece_table_t* pt) {
+    string_t* str = new_string(1000);
+
+    piece_t* current = pt->sequence->head;
+    while (current) {
+        const char* buffer = strcmp(current->data->source, "original_buffer") == 0
+            ? pt->original_buffer
+            : pt->append_buffer->content;
+
+        for (int i = 0; i < current->data->length; i++) {
+            char c_to_str[2] = { buffer[current->data->index + i], '\0' };
+
+            string_push(str, c_to_str);
+        }
+
+        current = current->next;
+    }
+
+    return str->content;
+}
+
 piece_t* create_piece(const char* source, int index, int length, int range) {
     piece_t* piece = malloc(sizeof(piece_t));
     piece->data = malloc(sizeof(data_t));
@@ -51,7 +72,7 @@ piece_table_t* create_pt(char* original_buffer) {
     return pt;
 };
 
-void insert_piece(piece_table_t* pt, char* data, int index) {
+void insert_text(piece_table_t* pt, char* data, int index) {
     string_push(pt->append_buffer, data);
 
     piece_t* current = pt->sequence->head;
@@ -128,12 +149,145 @@ void insert_piece(piece_table_t* pt, char* data, int index) {
     }
 }
 
+void delete_text(piece_table_t* pt, int index, int length) {
+    if (length == 0) return;
+
+    piece_t* current = pt->sequence->head;
+    int cur_pos = 0;
+
+    while (current) {
+        int piece_start = cur_pos;
+        int piece_end = cur_pos + current->data->length;
+
+        // if the deletion span is between a piece
+        if (index >= piece_start && index + length <= piece_end) {
+            piece_t* first_span = create_piece(
+                current->data->source,
+                current->data->index,
+                index - piece_start,
+                current->range
+            );
+            piece_t* last_span = create_piece(
+                current->data->source,
+                current->data->index + ((index + length) - piece_start),
+                piece_end - (index + length),
+                current->range
+            );
+
+            if (current->prev) {
+                if (first_span->data->length == 0 && last_span->data->length == 0) {
+                    current->prev->next = current->next;
+                    if (current->prev->next == NULL)
+                        pt->sequence->tail = current->prev;
+                    return;
+                }
+
+                if (first_span->data->length == 0) {
+                    current->prev->next = last_span;
+                    last_span->prev = current->prev;
+                    last_span->next = current->next;
+                    if (current->next == NULL)
+                        pt->sequence->tail = last_span;
+                    return;
+                } else {
+                    current->prev->next = first_span;
+                    first_span->next = last_span;
+                    first_span->prev = current->prev;
+                    last_span->next = current->next;
+                    last_span->prev = first_span;
+                    if (current->next == NULL)
+                        pt->sequence->tail = last_span;
+                    return;
+                }
+
+                if (last_span->data->length == 0) {
+                    current->prev->next = first_span;
+                    first_span->prev = current->prev;
+                    first_span->next = current->next;
+                    if (current->next == NULL)
+                        pt->sequence->tail = first_span;
+                    return;
+                } else {
+                    current->prev->next = last_span;
+                    last_span->prev = current->prev;
+                    last_span->next = current->next;
+                    if (current->next == NULL)
+                        pt->sequence->tail = last_span;
+                    return;
+                }
+            } else {
+                if (first_span->data->length == 0 && last_span->data->length == 0) {
+                    pt->sequence->head = current->next;
+                    pt->sequence->head->prev = NULL;
+                    if (pt->sequence->head->next == NULL)
+                        pt->sequence->tail = pt->sequence->head;
+                    return;
+                }
+
+                if (first_span->data->length == 0) {
+                    pt->sequence->head = last_span;
+                    last_span->prev = NULL;
+                    last_span->next = current->next;
+                    if (current->next == NULL)
+                        pt->sequence->tail = last_span;
+                    return;
+                } else {
+                    pt->sequence->head = first_span;
+                    first_span->next = last_span;
+                    first_span->prev = NULL;
+                    last_span->next = current->next;
+                    last_span->prev = first_span;
+                    if (current->next == NULL)
+                        pt->sequence->tail = last_span;
+                    return;
+                }
+
+                if (last_span->data->length == 0) {
+                    pt->sequence->head = first_span;
+                    first_span->prev = NULL;
+                    first_span->next = current->next;
+                    if (current->next == NULL)
+                        pt->sequence->tail = first_span;
+                    return;
+                } else {
+                    pt->sequence->head = last_span;
+                    last_span->prev = NULL;
+                    last_span->next = current->next;
+                    if (current->next == NULL)
+                        pt->sequence->tail = last_span;
+                    return;
+                }
+            }
+        }
+
+        // When deleting is on various pieces
+        // Beginning of the deletion piece
+        if (index >= piece_start && index <= piece_end) {
+
+        }
+
+        // End of the deletion piece
+        if (index + length - 1 >= piece_start && index + length - 1 <= piece_end) {
+        }
+
+        // Pieces bewteen. For delete
+        if (index + length - 1 > piece_start && index < piece_end) {
+        }
+
+        cur_pos += current->data->length;
+        current = current->next;
+    }
+}
+
 // FOR TESTING:
-// int main() {
-//     piece_table_t* pt = create_pt("esto");
-//     insert_piece(pt, "Hola ", 0);
-//     insert_piece(pt, " deberia sentido", 9);
-//     insert_piece(pt, " tener totalmente", 17);
-//     piece_dump(pt, pt->sequence->head);
-//     return 0;
-// }
+int main() {
+    piece_table_t* pt = create_pt("Buenos dias mis estimados");
+    insert_text(pt, " tu y todos", 11);
+    delete_text(pt, 0, 11);
+    // piece_table_t* pt = create_pt("esto");
+    // insert_piece(pt, "Hola ", 0);
+    // insert_piece(pt, " deberia sentido", 9);
+    // insert_piece(pt, " tener totalmente", 17);
+    piece_dump(pt, pt->sequence->head);
+    return 0;
+}
