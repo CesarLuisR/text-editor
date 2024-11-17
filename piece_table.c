@@ -155,6 +155,9 @@ void delete_text(piece_table_t* pt, int index, int length) {
     piece_t* current = pt->sequence->head;
     int cur_pos = 0;
 
+    piece_t* first_piece = NULL;
+    piece_t* last_piece = NULL;
+
     while (current) {
         int piece_start = cur_pos;
         int piece_end = cur_pos + current->data->length;
@@ -174,100 +177,78 @@ void delete_text(piece_table_t* pt, int index, int length) {
                 current->range
             );
 
-            if (current->prev) {
-                if (first_span->data->length == 0 && last_span->data->length == 0) {
-                    current->prev->next = current->next;
-                    if (current->prev->next == NULL)
-                        pt->sequence->tail = current->prev;
-                    return;
-                }
+            piece_t** insert_point = current->prev 
+                ? &(current->prev->next) 
+                : &(pt->sequence->head);
 
-                if (first_span->data->length == 0) {
-                    current->prev->next = last_span;
-                    last_span->prev = current->prev;
-                    last_span->next = current->next;
-                    if (current->next == NULL)
-                        pt->sequence->tail = last_span;
-                    return;
-                } else {
-                    current->prev->next = first_span;
-                    first_span->next = last_span;
-                    first_span->prev = current->prev;
-                    last_span->next = current->next;
-                    last_span->prev = first_span;
-                    if (current->next == NULL)
-                        pt->sequence->tail = last_span;
-                    return;
-                }
+            if (*insert_point == NULL) 
+                pt->sequence->tail = last_span;
 
-                if (last_span->data->length == 0) {
-                    current->prev->next = first_span;
-                    first_span->prev = current->prev;
-                    first_span->next = current->next;
-                    if (current->next == NULL)
-                        pt->sequence->tail = first_span;
-                    return;
-                } else {
-                    current->prev->next = last_span;
+            if (first_span->data->length == 0 && last_span->data->length == 0) {
+                *insert_point = current->next;
+                return;
+            }
+            
+            if (first_span->data->length == 0) {
+                *insert_point = last_span;
+                if (current->prev)
                     last_span->prev = current->prev;
-                    last_span->next = current->next;
-                    if (current->next == NULL)
-                        pt->sequence->tail = last_span;
-                    return;
-                }
+                last_span->next = current->next;
+                return;
             } else {
-                if (first_span->data->length == 0 && last_span->data->length == 0) {
-                    pt->sequence->head = current->next;
-                    pt->sequence->head->prev = NULL;
-                    if (pt->sequence->head->next == NULL)
-                        pt->sequence->tail = pt->sequence->head;
-                    return;
-                }
+                *insert_point = first_span;
+                first_span->next = last_span;
+                if (current->prev)
+                    first_span->prev = current->prev;
+                last_span->next = current->next;
+                last_span->prev = first_span;
+                return;
+            }
 
-                if (first_span->data->length == 0) {
-                    pt->sequence->head = last_span;
-                    last_span->prev = NULL;
-                    last_span->next = current->next;
-                    if (current->next == NULL)
-                        pt->sequence->tail = last_span;
-                    return;
-                } else {
-                    pt->sequence->head = first_span;
-                    first_span->next = last_span;
-                    first_span->prev = NULL;
-                    last_span->next = current->next;
-                    last_span->prev = first_span;
-                    if (current->next == NULL)
-                        pt->sequence->tail = last_span;
-                    return;
-                }
-
-                if (last_span->data->length == 0) {
-                    pt->sequence->head = first_span;
-                    first_span->prev = NULL;
-                    first_span->next = current->next;
-                    if (current->next == NULL)
-                        pt->sequence->tail = first_span;
-                    return;
-                } else {
-                    pt->sequence->head = last_span;
-                    last_span->prev = NULL;
-                    last_span->next = current->next;
-                    if (current->next == NULL)
-                        pt->sequence->tail = last_span;
-                    return;
-                }
+            if (last_span->data->length == 0) {
+                *insert_point = first_span;
+                if (current->prev)
+                    first_span->prev = current->prev;
+                first_span->next = current->next;
+                return;
+            } else {
+                *insert_point = last_span;
+                if (current->prev)
+                    last_span->prev = current->prev;
+                last_span->next = current->next;
+                return;
             }
         }
 
-        // When deleting is on various pieces
+        // When deleting is on various pieces (creating the pieces, then we'll join it).
         // Beginning of the deletion piece
         if (index >= piece_start && index <= piece_end) {
+            first_piece = create_piece(
+                current->data->source,
+                current->data->index,
+                index - piece_start,
+                current->range
+            );
 
+            if (current->prev) {
+                first_piece->prev = current->prev;
+                first_piece->next = current->next;
+            } else {
+                first_piece->prev = NULL;
+                first_piece->next = current->next;
+            }
         }
 
         // End of the deletion piece
-        if (index + length - 1 >= piece_start && index + length - 1 <= piece_end) {
+        if (index + length >= piece_start && index + length <= piece_end) {
+            last_piece = create_piece(
+                current->data->source,
+                current->data->index + ((index + length) - piece_start),
+                piece_end - (index + length),
+                current->range
+            );
+
+            last_piece->next = current->next;
         }
 
         // Pieces bewteen. For delete
@@ -277,13 +258,28 @@ void delete_text(piece_table_t* pt, int index, int length) {
         cur_pos += current->data->length;
         current = current->next;
     }
+
+    // Joining the new pieces. This when the deleting span is across various pieces.
+    if (first_piece == NULL) return;
+
+    if (first_piece->prev) first_piece->prev->next = first_piece;
+    else pt->sequence->head = first_piece;
+    
+    if (last_piece) {
+        first_piece->next = last_piece;
+        last_piece->prev = first_piece;
+        
+        if (last_piece->next == NULL) {
+            pt->sequence->tail = last_piece;
+        }
+    }
 }
 
 // FOR TESTING:
 int main() {
-    piece_table_t* pt = create_pt("Buenos dias mis estimados");
-    insert_text(pt, " tu y todos", 11);
-    delete_text(pt, 0, 11);
+    piece_table_t* pt = create_pt("Hola a ti,");
+    insert_text(pt, " tu y todos", 10);
+    delete_text(pt, 0, 1);
     // piece_table_t* pt = create_pt("esto");
     // insert_piece(pt, "Hola ", 0);
     // insert_piece(pt, " deberia sentido", 9);
