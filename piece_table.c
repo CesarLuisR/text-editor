@@ -177,23 +177,17 @@ void delete_text(piece_table_t* pt, int index, int length) {
                 current->range
             );
 
+            // This is the piece where will be inserted the first_piece
             piece_t** insert_point = current->prev 
                 ? &(current->prev->next) 
                 : &(pt->sequence->head);
 
-            if (*insert_point == NULL) 
+            if (current->next == NULL) 
                 pt->sequence->tail = last_span;
 
+            // If the piece is completely delected just jump to the next
             if (first_span->data->length == 0 && last_span->data->length == 0) {
                 *insert_point = current->next;
-                return;
-            }
-            
-            if (first_span->data->length == 0) {
-                *insert_point = last_span;
-                if (current->prev)
-                    last_span->prev = current->prev;
-                last_span->next = current->next;
                 return;
             } else {
                 *insert_point = first_span;
@@ -204,18 +198,22 @@ void delete_text(piece_table_t* pt, int index, int length) {
                 last_span->prev = first_span;
                 return;
             }
+            
+            // There is not first_span and there is last_span
+            if (first_span->data->length == 0) {
+                *insert_point = last_span;
+                if (current->prev)
+                    last_span->prev = current->prev;
+                last_span->next = current->next;
+                return;
+            }
 
+            // If there is first_span and not last_span
             if (last_span->data->length == 0) {
                 *insert_point = first_span;
                 if (current->prev)
                     first_span->prev = current->prev;
                 first_span->next = current->next;
-                return;
-            } else {
-                *insert_point = last_span;
-                if (current->prev)
-                    last_span->prev = current->prev;
-                last_span->next = current->next;
                 return;
             }
         }
@@ -251,7 +249,7 @@ void delete_text(piece_table_t* pt, int index, int length) {
             last_piece->next = current->next;
         }
 
-        // Pieces bewteen. For delete
+        // Pieces bewteen. For delete. Needed????
         if (index + length - 1 > piece_start && index < piece_end) {
         }
 
@@ -279,7 +277,7 @@ void delete_text(piece_table_t* pt, int index, int length) {
 int main() {
     piece_table_t* pt = create_pt("Hola a ti,");
     insert_text(pt, " tu y todos", 10);
-    delete_text(pt, 0, 1);
+    delete_text(pt, 0, 21);
     // piece_table_t* pt = create_pt("esto");
     // insert_piece(pt, "Hola ", 0);
     // insert_piece(pt, " deberia sentido", 9);
