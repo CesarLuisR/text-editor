@@ -25,3 +25,19 @@ void clear_string(string_t* str) {
     str->length = 0;
     strcpy(str->content, "");
 }
+
+// int main(void) {
+//     string_t* n = new_string(0);
+//     string_push(n, "Hola buenos dias mi hermano");
+//     printf(n->content);
+//     clear_string(n);
+//     printf("\nString vacia: %s\n", n->content);
+//     string_push(n, "Y entonces");
+//     string_push(n, "Otro mas klk");
+//     printf(n->content);
+//     clear_string(n);
+//     printf("\nString vacia: %s\n", n->content);
+//     string_push(n, "Hola buenos dias mi hermano");
+//     printf(n->content);
+//     return 0;
+// }

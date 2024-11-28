@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     fclose(file);
 
     piece_table_t* pt = create_pt(original_buffer);
-    insert_text(pt, "// Esto deberia estar al principio del nuevo archivo\n", 0);
+    // insert_text(pt, "// Esto deberia estar al principio del nuevo archivo\n", 0);
     char* pt_content = pt_parser(pt);
 
     save_file(argv[1], pt_content);

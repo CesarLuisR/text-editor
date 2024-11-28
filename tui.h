@@ -1,6 +1,5 @@
 #include <windows.h>
 #include "vector.h"
-#include "string.h"
 
 typedef struct {
     int width;

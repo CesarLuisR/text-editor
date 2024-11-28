@@ -1,5 +1,6 @@
 #include "piece_table.h"
 
+// For debugging
 void piece_dump(piece_table_t* pt, piece_t* current) {
     while (current) {
         const char* buffer = strcmp(current->data->source, "original_buffer") == 0
@@ -37,6 +38,63 @@ char* pt_parser(piece_table_t* pt) {
     return str->content;
 }
 
+history_t* create_history(piece_table_t* pt) {
+    history_t* history = malloc(sizeof(history));
+    history->head = NULL;
+    return history;
+}
+
+void history_add(history_t* history, void* value, enum type_t type) {
+    event_t* ev = malloc(sizeof(event_t));
+    ev->imp = 1;
+    ev->type = type;
+    ev->value = value;
+    ev->next = ev->prev = NULL;
+
+    if (history->head) {
+        ev->next = history->head;
+        history->head->prev = ev;
+    }
+
+    history->head = ev;
+}
+
+void dimp(history_t* h, event_t* ev, piece_table_t* pt) {
+    if (ev->imp == 0) return;
+
+    ev->imp = 0;
+    if (ev->type == INSERT) {
+        insert_info_t* current = ((insert_info_t*)(ev->value));
+        delete_text(pt, current->index, strlen(current->data), h);
+    } else {
+        delete_info_t* current = ((delete_info_t*)(ev->value));
+
+        if (current->actual_piece->prev) {
+            current->actual_piece->prev->next = current->actual_piece;
+        } else {
+            pt->sequence->head = current->actual_piece;
+        }
+    }
+}
+
+void imp(history_t* h, event_t* ev, piece_table_t* pt) {
+    if (ev->imp == 1) return;
+
+    ev->imp = 1;
+    if (ev->type == INSERT) {
+        insert_info_t* current = ((insert_info_t*)(ev->value));
+        insert_text(pt, current->data, current->index, h);
+    } else {
+        delete_info_t* current = ((delete_info_t*)(ev->value));
+
+        if (current->actual_piece->prev) {
+            current->actual_piece->prev->next = current->mod_piece;
+        } else {
+            pt->sequence->head = current->mod_piece;
+        }
+    }
+}
+
 piece_t* create_piece(const char* source, int index, int length, int range) {
     piece_t* piece = malloc(sizeof(piece_t));
     piece->data = malloc(sizeof(data_t));
@@ -72,8 +130,15 @@ piece_table_t* create_pt(char* original_buffer) {
     return pt;
 };
 
-void insert_text(piece_table_t* pt, char* data, int index) {
+
+void insert_text(piece_table_t* pt, char* data, int index, history_t* h) {
     string_push(pt->append_buffer, data);
+
+    insert_info_t* insert_info = malloc(sizeof (insert_info_t));
+    insert_info->data = data;
+    insert_info->index = index;
+
+    history_add(h, insert_info, INSERT);
 
     piece_t* current = pt->sequence->head;
     int cur_pos = 0;
@@ -112,12 +177,16 @@ void insert_text(piece_table_t* pt, char* data, int index) {
 
             // if first_half doesnt exists does not insert it
             if (current->data->length == 0) {
-                if (current->prev) current->prev->next = new_piece;
-                else pt->sequence->head = new_piece;
-            } else current->next = new_piece;
+                if (current->prev) {
+                    current->prev->next = new_piece;
+                    new_piece->prev = current->prev;
+                } else pt->sequence->head = new_piece;
+            } else {
+                current->next = new_piece;
+                new_piece->prev = current;
+            }
 
             new_piece->next = last_half;
-            new_piece->prev = current;
 
             pt->sequence->tail->next = NULL;
 
@@ -149,7 +218,36 @@ void insert_text(piece_table_t* pt, char* data, int index) {
     }
 }
 
-void delete_text(piece_table_t* pt, int index, int length) {
+piece_t* list_copy(piece_t* current) {
+    piece_t* head = create_piece(                
+        current->data->source, 
+        current->data->index, 
+        current->data->length, 
+        current->range
+    );
+    head->next = NULL;
+    
+    piece_t* tail = head;
+
+    current = current->next;
+    while (current) {
+        piece_t* new_piece = create_piece(                
+            current->data->source, 
+            current->data->index, 
+            current->data->length, 
+            current->range
+        );
+        tail->next = new_piece;
+        new_piece->prev = tail;
+
+        tail = new_piece;
+        current = current->next;
+    }
+
+    return head;
+}
+
+void delete_text(piece_table_t* pt, int index, int length, history_t* h) {
     if (length == 0) return;
 
     piece_t* current = pt->sequence->head;
@@ -158,12 +256,18 @@ void delete_text(piece_table_t* pt, int index, int length) {
     piece_t* first_piece = NULL;
     piece_t* last_piece = NULL;
 
+    delete_info_t* delete_info = malloc(sizeof(delete_info_t));
+
     while (current) {
         int piece_start = cur_pos;
         int piece_end = cur_pos + current->data->length;
 
         // if the deletion span is between a piece
         if (index >= piece_start && index + length <= piece_end) {
+            // Saving the actual piece in the history
+            delete_info->actual_piece = list_copy(current);
+            delete_info->actual_piece->prev = current->prev;
+
             piece_t* first_span = create_piece(
                 current->data->source,
                 current->data->index,
@@ -182,12 +286,18 @@ void delete_text(piece_table_t* pt, int index, int length) {
                 ? &(current->prev->next) 
                 : &(pt->sequence->head);
 
+            // delete_info->mod_piece = *insert_point;
+
             if (current->next == NULL) 
                 pt->sequence->tail = last_span;
 
             // If the piece is completely delected just jump to the next
             if (first_span->data->length == 0 && last_span->data->length == 0) {
                 *insert_point = current->next;
+                current->next->prev = *insert_point;
+
+                delete_info->mod_piece = list_copy(*insert_point);
+                history_add(h, delete_info, DELETE);
                 return;
             } else {
                 *insert_point = first_span;
@@ -196,6 +306,9 @@ void delete_text(piece_table_t* pt, int index, int length) {
                     first_span->prev = current->prev;
                 last_span->next = current->next;
                 last_span->prev = first_span;
+
+                delete_info->mod_piece = list_copy(*insert_point);
+                history_add(h, delete_info, DELETE);
                 return;
             }
             
@@ -205,6 +318,9 @@ void delete_text(piece_table_t* pt, int index, int length) {
                 if (current->prev)
                     last_span->prev = current->prev;
                 last_span->next = current->next;
+
+                delete_info->mod_piece = list_copy(*insert_point);
+                history_add(h, delete_info, DELETE);
                 return;
             }
 
@@ -214,6 +330,10 @@ void delete_text(piece_table_t* pt, int index, int length) {
                 if (current->prev)
                     first_span->prev = current->prev;
                 first_span->next = current->next;
+
+                delete_info->mod_piece = list_copy(*insert_point);
+                delete_info->mod_piece->prev = *insert_point;
+                history_add(h, delete_info, DELETE);
                 return;
             }
         }
@@ -221,6 +341,9 @@ void delete_text(piece_table_t* pt, int index, int length) {
         // When deleting is on various pieces (creating the pieces, then we'll join it).
         // Beginning of the deletion piece
         if (index >= piece_start && index <= piece_end) {
+            delete_info->actual_piece = list_copy(current);
+            delete_info->actual_piece->prev = current->prev;
+
             first_piece = create_piece(
                 current->data->source,
                 current->data->index,
@@ -271,17 +394,26 @@ void delete_text(piece_table_t* pt, int index, int length) {
             pt->sequence->tail = last_piece;
         }
     }
+
+    delete_info->mod_piece = list_copy(first_piece);
+    history_add(h, delete_info, DELETE);
 }
 
 // FOR TESTING:
 int main() {
-    piece_table_t* pt = create_pt("Hola a ti,");
-    insert_text(pt, " tu y todos", 10);
-    delete_text(pt, 0, 21);
-    // piece_table_t* pt = create_pt("esto");
-    // insert_piece(pt, "Hola ", 0);
-    // insert_piece(pt, " deberia sentido", 9);
-    // insert_piece(pt, " tener totalmente", 17);
+    piece_table_t* pt = create_pt("");
+    history_t* h = create_history(pt);
+
+    insert_text(pt, "Hola buenos dias mi hermano querido", 0, h);
+    insert_text(pt, " ENTONCES AQUI VA LO SIGUIENTE", 34, h);
+    delete_text(pt, 34, 30, h);
+
+    event_t* current = h->head;
+    dimp(h, current, pt);
+    imp(h, current, pt);
+    dimp(h, current, pt);
+    imp(h, current, pt);
+
     piece_dump(pt, pt->sequence->head);
     return 0;
 }

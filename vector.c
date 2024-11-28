@@ -23,3 +23,10 @@ void free_vector(vector_t* vec) {
     free(vec->entries);
     free(vec);
 }
+
+// int main() {
+//     vector_t* vec = create_vector(0);
+//     vector_push(vec, "Buenos dias");
+//     printf(vec->entries[0]);
+//     return 0;
+// }

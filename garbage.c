@@ -1,84 +1,48 @@
-            // if (current->prev) {
-            //     if (first_span->data->length == 0 && last_span->data->length == 0) {
-            //         current->prev->next = current->next;
-            //         if (current->prev->next == NULL)
-            //             pt->sequence->tail = current->prev;
-            //         return;
-            //     }
+// #include <stdio.h>
+// #include "piece_table.h"
+// #include "tui.h"
 
-            //     if (first_span->data->length == 0) {
-            //         current->prev->next = last_span;
-            //         last_span->prev = current->prev;
-            //         last_span->next = current->next;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = last_span;
-            //         return;
-            //     } else {
-            //         current->prev->next = first_span;
-            //         first_span->next = last_span;
-            //         first_span->prev = current->prev;
-            //         last_span->next = current->next;
-            //         last_span->prev = first_span;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = last_span;
-            //         return;
-            //     }
+// int file_handler(int argc, char* argv[]) {
+//     if (argc == 1) {
+//         printf("Enter an argument");
+//         return 1;
+//     }
 
-            //     if (last_span->data->length == 0) {
-            //         current->prev->next = first_span;
-            //         first_span->prev = current->prev;
-            //         first_span->next = current->next;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = first_span;
-            //         return;
-            //     } else {
-            //         current->prev->next = last_span;
-            //         last_span->prev = current->prev;
-            //         last_span->next = current->next;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = last_span;
-            //         return;
-            //     }
-            // } else {
-            //     if (first_span->data->length == 0 && last_span->data->length == 0) {
-            //         pt->sequence->head = current->next;
-            //         pt->sequence->head->prev = NULL;
-            //         if (pt->sequence->head->next == NULL)
-            //             pt->sequence->tail = pt->sequence->head;
-            //         return;
-            //     }
+//     return 0;
+// }
 
-            //     if (first_span->data->length == 0) {
-            //         pt->sequence->head = last_span;
-            //         last_span->prev = NULL;
-            //         last_span->next = current->next;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = last_span;
-            //         return;
-            //     } else {
-            //         pt->sequence->head = first_span;
-            //         first_span->next = last_span;
-            //         first_span->prev = NULL;
-            //         last_span->next = current->next;
-            //         last_span->prev = first_span;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = last_span;
-            //         return;
-            //     }
+// char* file_to_string(FILE* file) {
+//     string_t* original_buffer = new_string(256);
+//     char line[256];
 
-            //     if (last_span->data->length == 0) {
-            //         pt->sequence->head = first_span;
-            //         first_span->prev = NULL;
-            //         first_span->next = current->next;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = first_span;
-            //         return;
-            //     } else {
-            //         pt->sequence->head = last_span;
-            //         last_span->prev = NULL;
-            //         last_span->next = current->next;
-            //         if (current->next == NULL)
-            //             pt->sequence->tail = last_span;
-            //         return;
-            //     }
-            // }
+//     while (fgets(line, sizeof(line), file)) {
+//         string_push(original_buffer, line);
+//     }
+
+//     return original_buffer->content;
+// }
+
+
+// void save_file(char* filename, char* content) {
+//     FILE* file = fopen(filename, "w");
+
+//     fprintf(file, "%s", content);
+// }
+
+// int main(int argc, char* argv[]) {
+//     if (file_handler(argc, argv) == 1) return 1;
+
+//     FILE* file = fopen(argv[1], "r");
+//     char* original_buffer = file_to_string(file);
+//     fclose(file);
+
+//     piece_table_t* pt = create_pt(original_buffer);
+//     // insert_text(pt, "// Esto deberia estar al principio del nuevo archivo\n", 0);
+//     char* pt_content = pt_parser(pt);
+
+//     save_file(argv[1], pt_content);
+
+//     render(pt_content);
+
+//     return 0;
+// }
