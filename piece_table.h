@@ -52,24 +52,42 @@ typedef struct {
     char* data;
 } insert_info_t;
 
+// typedef struct {
+//     sequence_t* actual_piece;
+//     sequence_t* mod_piece;
+//     piece_t* insert_p;
+// } delete_info_t;
+
+typedef struct path_seq {
+    piece_t* head;
+    piece_t* tail;
+    struct path_seq* next;
+    struct path_seq* prev;
+} path_seq;
+
 typedef struct {
-    piece_t* actual_piece;
-    piece_t* mod_piece;
+    path_seq* head;
+    path_seq* tail;
+} path_t;
+
+typedef struct {
+    int index;
+    int length;
+    char* data;
 } delete_info_t;
 
 // Main functions
-piece_t* create_piece(const char* source, int index, int length, int range);
+piece_t* create_piece(const char* source, int index, int length);
 piece_table_t* create_pt(char* original_buffer);
-void insert_text(piece_table_t* pt, char* data, int index, history_t* h);
-void delete_text(piece_table_t* pt, int index, int length, history_t* h);
-history_t* create_history(piece_table_t* pt);
-void history_add(history_t* history, void* value, enum type_t type);
-void dimp(history_t* h, event_t* ev, piece_table_t* pt);
-void imp(history_t* h, event_t* ev, piece_table_t* pt);
+void insert_text(piece_table_t* pt, char* data, int index, path_t* path);
+void delete_text(piece_table_t* pt, int index, int length, path_t* path);
+void undo(path_t* path, piece_table_t* pt);
+void redo(path_t* path, piece_table_t* pt);
 
 // Utilities
 void piece_dump(piece_table_t* pt, piece_t* current);
 char* pt_parser(piece_table_t* pt);
+sequence_t* list_copy(piece_t* current);
 
 
 
