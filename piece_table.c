@@ -354,17 +354,17 @@ void redo(path_t* path, piece_table_t* pt) {
 }
 
 // FOR TESTING:
-int main() {
-    piece_table_t* pt = create_pt("");
-    // history_t* h = create_history(pt);
-    path_t* path = create_path(pt);
+// int main() {
+//     piece_table_t* pt = create_pt("");
+//     // history_t* h = create_history(pt);
+//     path_t* path = create_path(pt);
 
-    insert_text(pt, "Hola buenos dias mi hermano querido", 0, path);
-    insert_text(pt, "HOLA ESTO IRA POR EL MEDIO", 12, path);
-    delete_text(pt, 12, 26, path);
-    insert_text(pt, "ESTO DEBERIA IR AL PRINCIPIO ", 0, path);
-    delete_text(pt, 0, 5, path);
+//     insert_text(pt, "Hola buenos dias mi hermano querido", 0, path);
+//     insert_text(pt, "HOLA ESTO IRA POR EL MEDIO", 12, path);
+//     delete_text(pt, 12, 26, path);
+//     insert_text(pt, "ESTO DEBERIA IR AL PRINCIPIO ", 0, path);
+//     delete_text(pt, 0, 5, path);
 
-    printf("THE ORIGINAL:\n");
-    piece_dump(pt, pt->sequence->head);
-}
+//     printf("THE ORIGINAL:\n");
+//     piece_dump(pt, pt->sequence->head);
+// }

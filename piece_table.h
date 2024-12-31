@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
 #include "string.h"
+
 
 typedef struct {
     char* source;
@@ -83,6 +83,8 @@ void insert_text(piece_table_t* pt, char* data, int index, path_t* path);
 void delete_text(piece_table_t* pt, int index, int length, path_t* path);
 void undo(path_t* path, piece_table_t* pt);
 void redo(path_t* path, piece_table_t* pt);
+path_t* create_path(piece_table_t* pt);
+
 
 // Utilities
 void piece_dump(piece_table_t* pt, piece_t* current);

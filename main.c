@@ -37,12 +37,14 @@ int main(int argc, char* argv[]) {
     fclose(file);
 
     piece_table_t* pt = create_pt(original_buffer);
+    path_t* path = create_path(pt);
     // insert_text(pt, "// Esto deberia estar al principio del nuevo archivo\n", 0);
     char* pt_content = pt_parser(pt);
 
-    save_file(argv[1], pt_content);
+    // save_file(argv[1], pt_content);
+    // printf("%s", pt_content);
 
-    render(pt_content);
+    listener(pt_content, pt, path);
 
     return 0;
 }

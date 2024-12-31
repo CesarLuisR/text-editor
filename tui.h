@@ -14,4 +14,6 @@ typedef struct {
 windows_size_t get_windows_size();
 void gotoxy(int x, int y);
 void clear_console();
-void render(char* content);
+void render(vector_t* vec, int* line_n, cursor_pos_t* c_pos, int* sp_line);
+void listener(char* content, piece_table_t* pt, path_t* path);
+void arrow_handler(int* line_n, cursor_pos_t* c_pos, int length, int* sp_line, vector_t* vec, int* cursor_max);
