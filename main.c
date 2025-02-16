@@ -31,7 +31,6 @@ void save_file(char* filename, char* content) {
     fprintf(file, "%s", content);
 }
 
-// THIS FILE HAS SHIT CODE I KNOW, SORRY I AM THROUGH A BREAKUP :( 12/30/2024
 // THE UNDO/REDO IS SHIT BECAUSE OF THIS, I DONT WANT TO KEEP DOING THIS ANYMORE
 // BUT I NEED TO FINISH THIS BEFORE 2025 :) 
 
